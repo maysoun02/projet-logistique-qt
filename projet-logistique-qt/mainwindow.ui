@@ -11,9 +11,74 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Gestion Logistique</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>780</width>
+      <height>540</height>
+     </rect>
+    </property>
+    <widget class="QWidget" name="tabClients">
+     <attribute name="title">
+      <string>Clients</string>
+     </attribute>
+     <layout class="QVBoxLayout" name="verticalLayoutClients">
+      <item>
+       <widget class="QTableWidget" name="tableClients"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="formClients">
+        <item><widget class="QLineEdit" name="lineNom"/></item>
+        <item><widget class="QLineEdit" name="linePrenom"/></item>
+        <item><widget class="QLineEdit" name="lineEmail"/></item>
+        <item><widget class="QLineEdit" name="lineTel"/></item>
+        <item><widget class="QLineEdit" name="lineAdresse"/></item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="buttonsClients">
+        <item><widget class="QPushButton" name="btnAjouterClient"><property name="text"><string>Ajouter</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnModifierClient"><property name="text"><string>Modifier</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnSupprimerClient"><property name="text"><string>Supprimer</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnActualiserClient"><property name="text"><string>Actualiser</string></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QWidget" name="tabCommandes">
+     <attribute name="title">
+      <string>Commandes</string>
+     </attribute>
+     <layout class="QVBoxLayout" name="verticalLayoutCommandes">
+      <item>
+       <widget class="QTableWidget" name="tableCommandes"/>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="formCommandes">
+        <item><widget class="QDateEdit" name="dateCommande"/></item>
+        <item><widget class="QComboBox" name="typeLivraison"><item><property name="text"><string>Express</string></property></item><item><property name="text"><string>Standard</string></property></item></widget></item>
+        <item><widget class="QComboBox" name="statutCommande"><item><property name="text"><string>En cours</string></property></item><item><property name="text"><string>Livrée</string></property></item><item><property name="text"><string>Annulée</string></property></item></widget></item>
+        <item><widget class="QLineEdit" name="adresseLivraison"/></item>
+        <item><widget class="QLineEdit" name="idClient"/></item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="buttonsCommandes">
+        <item><widget class="QPushButton" name="btnAjouterCommande"><property name="text"><string>Ajouter</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnModifierCommande"><property name="text"><string>Modifier</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnSupprimerCommande"><property name="text"><string>Supprimer</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnActualiserCommande"><property name="text"><string>Actualiser</string></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>

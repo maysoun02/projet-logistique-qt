@@ -3,19 +3,42 @@
 #include "ClientService.h"
 #include "CommandeService.h"
 #include <QMessageBox>
+#include <QDialog>
+#include <QFormLayout>
+#include <QDialogButtonBox>
+#include <QLineEdit>
+#include <QMessageBox>
+#include <QRegularExpressionValidator>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    chargerClients();
+    // Nom & Prénom : lettres et espaces uniquement
+    QRegularExpressionValidator* nomValidator = new QRegularExpressionValidator(QRegularExpression("[a-zA-ZÀ-ÿ\\s'-]{2,}"), this);
+    ui->lineNom->setValidator(nomValidator);
+    ui->linePrenom->setValidator(nomValidator);
+
+    // Email : format simple (exemple@domaine.com)
+    QRegularExpressionValidator* emailValidator = new QRegularExpressionValidator(
+        QRegularExpression("^[\\w\\.=-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$"), this);
+    ui->lineEmail->setValidator(emailValidator);
+
+    // Téléphone : déjà géré par inputMask dans .ui
+
+    // Adresse : texte libre (pas de validator strict, juste un minimum de caractères)
+    QRegularExpressionValidator* adresseValidator = new QRegularExpressionValidator(QRegularExpression(".{5,}"), this);
+    ui->lineAdresse->setValidator(adresseValidator);
 
     // Clients
     connect(ui->btnAjouterClient, &QPushButton::clicked, this, &MainWindow::ajouterClient);
     connect(ui->btnModifierClient, &QPushButton::clicked, this, &MainWindow::modifierClient);
     connect(ui->btnSupprimerClient, &QPushButton::clicked, this, &MainWindow::supprimerClient);
-    connect(ui->btnActualiserClient, &QPushButton::clicked, this, &MainWindow::chargerClients);
     connect(ui->tableClients, &QTableWidget::cellClicked, this, &MainWindow::remplirChampsClient);
+
 
     // Commandes
     connect(ui->btnAjouterCommande, &QPushButton::clicked, this, &MainWindow::ajouterCommande);
@@ -35,6 +58,10 @@ MainWindow::~MainWindow() {
 // Clients
 void MainWindow::chargerClients() {
     ui->tableClients->setRowCount(0);
+    ui->tableClients->setColumnCount(6);
+    QStringList headers = {"ID", "Nom", "Prénom", "Email", "Téléphone", "Adresse"};
+    ui->tableClients->setHorizontalHeaderLabels(headers);
+    ui->tableClients->setColumnHidden(0, true);
     auto clients = ClientService::getAllClients();
     for (const auto& c : clients) {
         int row = ui->tableClients->rowCount();
@@ -49,16 +76,84 @@ void MainWindow::chargerClients() {
 }
 
 void MainWindow::ajouterClient() {
-    Client c(0, ui->lineNom->text(), ui->linePrenom->text(), ui->lineEmail->text(), ui->lineTel->text(), ui->lineAdresse->text());
-    if (ClientService::addClient(c)) chargerClients();
+    QString nom = ui->lineNom->text().trimmed();
+    QString prenom = ui->linePrenom->text().trimmed();
+    QString email = ui->lineEmail->text().trimmed();
+    QString tel = ui->lineTel->text().trimmed();
+    QString adresse = ui->lineAdresse->text().trimmed();
+
+    // Vérifier si un champ est vide
+    if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() || tel.isEmpty() || adresse.isEmpty()) {
+        QMessageBox::warning(this, "Champs manquants", "Veuillez remplir tous les champs avant d’ajouter un client.");
+        return;
+    }
+
+    Client c(0, nom, prenom, email, tel, adresse);
+    if (ClientService::addClient(c)) {
+        chargerClients();
+        ui->lineNom->clear();
+        ui->linePrenom->clear();
+        ui->lineEmail->clear();
+        ui->lineTel->clear();
+        ui->lineAdresse->clear();
+    } else {
+        QMessageBox::critical(this, "Erreur", "L'ajout du client a échoué.");
+    }
 }
 
 void MainWindow::modifierClient() {
     int row = ui->tableClients->currentRow();
     if (row < 0) return;
+
+    // 1. Récupère le client sélectionné
     int id = ui->tableClients->item(row, 0)->text().toInt();
-    Client c(id, ui->lineNom->text(), ui->linePrenom->text(), ui->lineEmail->text(), ui->lineTel->text(), ui->lineAdresse->text());
-    if (ClientService::updateClient(c)) chargerClients();
+    QString nom = ui->tableClients->item(row, 1)->text();
+    QString prenom = ui->tableClients->item(row, 2)->text();
+    QString email = ui->tableClients->item(row, 3)->text();
+    QString tel = ui->tableClients->item(row, 4)->text();
+    QString adresse = ui->tableClients->item(row, 5)->text();
+
+    // 2. Créer une boîte de dialogue
+    QDialog dialog(this);
+    dialog.setWindowTitle("Modifier le client");
+
+    QFormLayout form(&dialog);
+
+    QLineEdit lineNom(nom);
+    QLineEdit linePrenom(prenom);
+    QLineEdit lineEmail(email);
+    QLineEdit lineTel(tel);
+    QLineEdit lineAdresse(adresse);
+
+    form.addRow("Nom:", &lineNom);
+    form.addRow("Prénom:", &linePrenom);
+    form.addRow("Email:", &lineEmail);
+    form.addRow("Téléphone:", &lineTel);
+    form.addRow("Adresse:", &lineAdresse);
+
+    // Boutons enregistrer/annuler
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    // 3. Si l’utilisateur clique sur "OK"
+    if (dialog.exec() == QDialog::Accepted) {
+        Client c(id,
+                 lineNom.text(),
+                 linePrenom.text(),
+                 lineEmail.text(),
+                 lineTel.text(),
+                 lineAdresse.text());
+
+        if (ClientService::updateClient(c)) {
+            QMessageBox::information(this, "Succès", "Client modifié !");
+            chargerClients();
+        } else {
+            QMessageBox::warning(this, "Erreur", "La modification a échoué.");
+        }
+    }
 }
 
 void MainWindow::supprimerClient() {

@@ -14,4 +14,10 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
     return a.exec();
+    QSqlQuery testQuery;
+    if (!testQuery.exec("SELECT * FROM CLIENT")) {
+        qDebug() << "Erreur SELECT CLIENT:" << testQuery.lastError().text();
+    } else {
+        qDebug() << "Requête test CLIENT réussie.";
+    }
 }

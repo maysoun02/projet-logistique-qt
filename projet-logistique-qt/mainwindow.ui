@@ -20,123 +20,66 @@
       <x>10</x>
       <y>10</y>
       <width>780</width>
-      <height>540</height>
+      <height>580</height>
      </rect>
     </property>
+
+    <!-- Tab Clients -->
     <widget class="QWidget" name="tabClients">
-         <attribute name="title">
-          <string>Clients</string>
-         </attribute>
-         <layout class="QVBoxLayout" name="verticalLayoutClients">
-          <item>
-           <widget class="QTableWidget" name="tableClients"/>
-          </item>
-          <item>
-           <spacer name="verticalSpacer">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>10</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="horizontalWrapper">
-            <item>
-             <spacer name="leftSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Expanding</enum>
-              </property>
-             </spacer>
-            </item>
-            <item>
-             <layout class="QFormLayout" name="formClients">
-              <item row="0" column="0">
-               <widget class="QLabel" name="labelNom">
-                <property name="text">
-                 <string>Nom :</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="lineNom"/>
-              </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="labelPrenom">
-                <property name="text">
-                 <string>Prénom :</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="linePrenom"/>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="labelEmail">
-                <property name="text">
-                 <string>Email :</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QLineEdit" name="lineEmail"/>
-              </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="labelTel">
-                <property name="text">
-                 <string>Téléphone :</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="1">
-               <widget class="QLineEdit" name="lineTel"/>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="labelAdresse">
-                <property name="text">
-                 <string>Adresse :</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="1">
-               <widget class="QLineEdit" name="lineAdresse"/>
-              </item>
-             </layout>
-            </item>
-            <item>
-             <spacer name="rightSpacer">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Expanding</enum>
-              </property>
-             </spacer>
-            </item>
-           </layout>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="buttonsClients">
-            <item><widget class="QPushButton" name="btnAjouterClient"><property name="text"><string>Ajouter</string></property></widget></item>
-            <item><widget class="QPushButton" name="btnModifierClient"><property name="text"><string>Modifier</string></property></widget></item>
-            <item><widget class="QPushButton" name="btnSupprimerClient"><property name="text"><string>Supprimer</string></property></widget></item>
-           </layout>
-          </item>
-         </layout>
-        </widget>
+     <attribute name="title">
+      <string>Clients</string>
+     </attribute>
+     <layout class="QVBoxLayout" name="verticalLayoutClients">
+      <item>
+       <widget class="QTableWidget" name="tableClients"/>
+      </item>
+      <item>
+       <layout class="QFormLayout" name="formClients">
 
+        <item row="0" column="0"><widget class="QLabel" name="labelNom"><property name="text"><string>Nom :</string></property></widget></item>
+        <item row="0" column="1"><widget class="QLineEdit" name="lineNom"/></item>
+        <item row="1" column="0"><widget class="QLabel" name="labelPrenom"><property name="text"><string>Prénom :</string></property></widget></item>
+        <item row="1" column="1"><widget class="QLineEdit" name="linePrenom"/></item>
+        <item row="2" column="0"><widget class="QLabel" name="labelEmail"><property name="text"><string>Email :</string></property></widget></item>
+        <item row="2" column="1"><widget class="QLineEdit" name="lineEmail"/></item>
+        <item row="3" column="1">
+         <widget class="QLabel" name="labelEmailError">
+          <property name="text"><string>Format email invalide</string></property>
+          <property name="styleSheet"><string notr="true">color: red;</string></property>
+          <property name="visible"><bool>false</bool></property>
+         </widget>
+        </item>
+        <item row="4" column="0"><widget class="QLabel" name="labelTel"><property name="text"><string>Téléphone :</string></property></widget></item>
+        <item row="4" column="1"><widget class="QLineEdit" name="lineTel"/></item>
+        <item row="5" column="1">
+         <widget class="QLabel" name="labelTelError">
+          <property name="text"><string>Le téléphone doit contenir au moins 8 caractères.</string></property>
+          <property name="styleSheet"><string notr="true">color: red;</string></property>
+          <property name="visible"><bool>false</bool></property>
+         </widget>
+        </item>
+        <item row="6" column="0"><widget class="QLabel" name="labelAdresse"><property name="text"><string>Adresse :</string></property></widget></item>
+        <item row="6" column="1"><widget class="QLineEdit" name="lineAdresse"/></item>
+        <item row="7" column="1">
+         <widget class="QLabel" name="labelAdresseError">
+          <property name="text"><string>L'adresse doit contenir au moins 5 caractères.</string></property>
+          <property name="styleSheet"><string notr="true">color: red;</string></property>
+          <property name="visible"><bool>false</bool></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="buttonsClients">
+        <item><widget class="QPushButton" name="btnAjouterClient"><property name="text"><string>Ajouter</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnModifierClient"><property name="text"><string>Modifier</string></property></widget></item>
+        <item><widget class="QPushButton" name="btnSupprimerClient"><property name="text"><string>Supprimer</string></property></widget></item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
 
-
+    <!-- Tab Commandes -->
     <widget class="QWidget" name="tabCommandes">
      <attribute name="title">
       <string>Commandes</string>
@@ -146,12 +89,42 @@
        <widget class="QTableWidget" name="tableCommandes"/>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="formCommandes">
-        <item><widget class="QDateEdit" name="dateCommande"/></item>
-        <item><widget class="QComboBox" name="typeLivraison"><item><property name="text"><string>Express</string></property></item><item><property name="text"><string>Standard</string></property></item></widget></item>
-        <item><widget class="QComboBox" name="statutCommande"><item><property name="text"><string>En cours</string></property></item><item><property name="text"><string>Livrée</string></property></item><item><property name="text"><string>Annulée</string></property></item></widget></item>
-        <item><widget class="QLineEdit" name="adresseLivraison"/></item>
-        <item><widget class="QLineEdit" name="idClient"/></item>
+       <layout class="QFormLayout" name="formCommandes">
+        <item row="0" column="0"><widget class="QLabel" name="labelDateCommande"><property name="text"><string>Date commande :</string></property></widget></item>
+        <item row="0" column="1"><widget class="QDateEdit" name="dateCommande"/></item>
+        <item row="1" column="0"><widget class="QLabel" name="labelTypeLivraison"><property name="text"><string>Type livraison :</string></property></widget></item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="comboTypeLivraison">
+          <item><property name="text"><string>Express</string></property></item>
+          <item><property name="text"><string>Standard</string></property></item>
+         </widget>
+        </item>
+        <item row="2" column="0"><widget class="QLabel" name="labelStatutCommande"><property name="text"><string>Statut commande :</string></property></widget></item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="comboStatutCommande">
+          <item><property name="text"><string>En cours</string></property></item>
+          <item><property name="text"><string>Livrée</string></property></item>
+          <item><property name="text"><string>Annulée</string></property></item>
+         </widget>
+        </item>
+        <item row="3" column="0"><widget class="QLabel" name="labelAdresseLivraison"><property name="text"><string>Adresse livraison :</string></property></widget></item>
+        <item row="3" column="1"><widget class="QLineEdit" name="adresseLivraison"/></item>
+        <item row="4" column="1">
+         <widget class="QLabel" name="labelAdresseLivraisonError">
+          <property name="text"><string>L'adresse de livraison doit contenir au moins 5 caractères.</string></property>
+          <property name="styleSheet"><string notr="true">color: red;</string></property>
+          <property name="visible"><bool>false</bool></property>
+         </widget>
+        </item>
+        <item row="5" column="0"><widget class="QLabel" name="labelIdClientCommande"><property name="text"><string>ID client :</string></property></widget></item>
+        <item row="5" column="1"><widget class="QLineEdit" name="idClientCommande"/></item>
+        <item row="6" column="1">
+         <widget class="QLabel" name="labelIdClientCommandeError">
+          <property name="text"><string>Veuillez renseigner un ID client valide.</string></property>
+          <property name="styleSheet"><string notr="true">color: red;</string></property>
+          <property name="visible"><bool>false</bool></property>
+         </widget>
+        </item>
        </layout>
       </item>
       <item>
@@ -159,23 +132,14 @@
         <item><widget class="QPushButton" name="btnAjouterCommande"><property name="text"><string>Ajouter</string></property></widget></item>
         <item><widget class="QPushButton" name="btnModifierCommande"><property name="text"><string>Modifier</string></property></widget></item>
         <item><widget class="QPushButton" name="btnSupprimerCommande"><property name="text"><string>Supprimer</string></property></widget></item>
-        <item><widget class="QPushButton" name="btnActualiserCommande"><property name="text"><string>Actualiser</string></property></widget></item>
        </layout>
       </item>
      </layout>
     </widget>
+
    </widget>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>26</height>
-    </rect>
-   </property>
-  </widget>
+  <widget class="QMenuBar" name="menubar"/>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>

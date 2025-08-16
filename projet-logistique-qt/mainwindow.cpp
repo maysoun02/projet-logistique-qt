@@ -132,20 +132,77 @@ void MainWindow::ajouterClient() {
 
 void MainWindow::modifierClient() {
     int row = ui->tableClients->currentRow();
-    if (row < 0) return;
+    if (row < 0) {
+        QMessageBox::warning(this, "Erreur", "Veuillez sélectionner un client.");
+        return;
+    }
 
-    int id = ui->tableClients->item(row, 0)->text().toInt();
-    Client c(id,
-             ui->lineNom->text(),
-             ui->linePrenom->text(),
-             ui->lineEmail->text(),
-             ui->lineTel->text(),
-             ui->lineAdresse->text());
+    auto getTextSafe = [&](int col) -> QString {
+        auto item = ui->tableClients->item(row, col);
+        return item ? item->text() : "";
+    };
 
-    if (ClientService::updateClient(c)) {
-        chargerClients();
+    QString nom     = getTextSafe(1); // Colonne Nom
+    QString prenom  = getTextSafe(2); // Colonne Prénom
+    QString email   = getTextSafe(3); // Colonne Email
+    QString tel     = getTextSafe(4); // Colonne Téléphone
+    QString adresse = getTextSafe(5); // Colonne Adresse
+
+    if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() ||
+        tel.isEmpty() || adresse.isEmpty()) {
+        QMessageBox::critical(this, "Erreur", "Les données du client sélectionné sont incomplètes.");
+        return;
+    }
+
+    // Création du popup
+    QDialog dialog(this);
+    dialog.setWindowTitle("Modifier Client");
+    QFormLayout form(&dialog);
+
+    QLineEdit nomEdit(nom);
+    form.addRow("Nom :", &nomEdit);
+
+    QLineEdit prenomEdit(prenom);
+    form.addRow("Prénom :", &prenomEdit);
+
+    QLineEdit emailEdit(email);
+    form.addRow("Email :", &emailEdit);
+
+    QLineEdit telEdit(tel);
+    form.addRow("Téléphone :", &telEdit);
+
+    QLineEdit adresseEdit(adresse);
+    form.addRow("Adresse :", &adresseEdit);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form.addRow(&buttonBox);
+
+    connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        // Vérification de base
+        if (nomEdit.text().trimmed().isEmpty() || prenomEdit.text().trimmed().isEmpty() ||
+            emailEdit.text().trimmed().isEmpty() || telEdit.text().trimmed().isEmpty() ||
+            adresseEdit.text().trimmed().isEmpty()) {
+            QMessageBox::warning(this, "Erreur", "Tous les champs doivent être remplis.");
+            return;
+        }
+
+        int id = ui->tableClients->item(row, 0)->text().toInt();
+        Client c(id,
+                 nomEdit.text(),
+                 prenomEdit.text(),
+                 emailEdit.text(),
+                 telEdit.text(),
+                 adresseEdit.text());
+
+        if (ClientService::updateClient(c)) {
+            chargerClients();
+        }
     }
 }
+
 
 void MainWindow::supprimerClient() {
     int row = ui->tableClients->currentRow();

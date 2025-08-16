@@ -14,6 +14,11 @@
 #include <QMessageBox>
 #include <QRegularExpressionValidator>
 #include <QDate>
+#include <QDialogButtonBox>
+#include <QDialog>
+#include <QFormLayout>
+#include <QVBoxLayout>
+#include <QIntValidator>
 
 // =========================
 // Constructeur
@@ -23,6 +28,13 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    // Pour afficher un calendrier dans dateCommande
+    ui->dateCommande->setCalendarPopup(true);
+
+    // Masquer les messages d'erreurs au démarrage
+    ui->labelAdresseLivraisonError->setVisible(false);
+    ui->labelIdClientCommandeError->setVisible(false);
+
     setupValidators();
 
     // Connexions - Clients
@@ -158,7 +170,13 @@ void MainWindow::remplirChampsClient(int row, int) {
 // =========================
 void MainWindow::chargerCommandes() {
     ui->tableCommandes->setRowCount(0);
+    ui->tableCommandes->setColumnCount(6);
+
+    QStringList headers = {"ID", "Date Commande", "Type Livraison", "Statut Commande", "Adresse Livraison", "ID Client"};
+    ui->tableCommandes->setHorizontalHeaderLabels(headers);
+
     auto commandes = CommandeService::getAllCommandes();
+
     for (const auto& c : commandes) {
         int row = ui->tableCommandes->rowCount();
         ui->tableCommandes->insertRow(row);
@@ -169,44 +187,182 @@ void MainWindow::chargerCommandes() {
         ui->tableCommandes->setItem(row, 4, new QTableWidgetItem(c.adresseLivraison));
         ui->tableCommandes->setItem(row, 5, new QTableWidgetItem(QString::number(c.clientId)));
     }
+
+    // Masquer la colonne ID
+    ui->tableCommandes->setColumnHidden(0, true);
+    ui->tableCommandes->resizeColumnsToContents();
 }
 
+// =========================
+// Ajout commande
+// =========================
 void MainWindow::ajouterCommande() {
+    if (ui->adresseLivraison->text().trimmed().length() < 5) {
+        QMessageBox::warning(this, "Erreur", "L'adresse de livraison doit contenir au moins 5 caractères.");
+        return;
+    }
+    if (ui->idClientCommande->text().toInt() <= 0) {
+        QMessageBox::warning(this, "Erreur", "Veuillez entrer un ID client valide.");
+        return;
+    }
+
     Commande c(0,
                ui->dateCommande->date(),
                ui->comboTypeLivraison->currentText(),
                ui->comboStatutCommande->currentText(),
                ui->adresseLivraison->text(),
                ui->idClientCommande->text().toInt());
-    if (CommandeService::addCommande(c)) chargerCommandes();
+
+    if (CommandeService::addCommande(c)) {
+        chargerCommandes();
+    }
 }
 
+// =========================
+// Modifier commande (popup)
+// =========================
 void MainWindow::modifierCommande() {
     int row = ui->tableCommandes->currentRow();
-    if (row < 0) return;
+    if (row < 0) {
+        QMessageBox::warning(this, "Erreur", "Veuillez sélectionner une commande.");
+        return;
+    }
 
-    int id = ui->tableCommandes->item(row, 0)->text().toInt();
-    Commande c(id,
-               ui->dateCommande->date(),
-               ui->comboTypeLivraison->currentText(),
-               ui->comboStatutCommande->currentText(),
-               ui->adresseLivraison->text(),
-               ui->idClientCommande->text().toInt());
-    if (CommandeService::updateCommande(c)) chargerCommandes();
+    auto getTextSafe = [&](int col) -> QString {
+        auto item = ui->tableCommandes->item(row, col);
+        return item ? item->text() : "";
+    };
+
+    QString dateText     = getTextSafe(1);
+    QString typeText     = getTextSafe(2);
+    QString statutText   = getTextSafe(3);
+    QString adresseText  = getTextSafe(4);
+    QString clientIdText = getTextSafe(5);
+
+    if (dateText.isEmpty() || typeText.isEmpty() || statutText.isEmpty() ||
+        adresseText.isEmpty() || clientIdText.isEmpty()) {
+        QMessageBox::critical(this, "Erreur", "Les données de la commande sélectionnée sont incomplètes.");
+        return;
+    }
+
+    // Création du popup
+    QDialog dialog(this);
+    dialog.setWindowTitle("Modifier Commande");
+    QFormLayout form(&dialog);
+
+    QDateEdit dateEdit;
+    dateEdit.setDate(QDate::fromString(dateText, "yyyy-MM-dd"));
+    dateEdit.setCalendarPopup(true); // calendrier activé
+    form.addRow("Date commande :", &dateEdit);
+
+    QComboBox typeCombo;
+    typeCombo.addItems({"Express", "Standard"});
+    typeCombo.setCurrentText(typeText);
+    form.addRow("Type livraison :", &typeCombo);
+
+    QComboBox statutCombo;
+    statutCombo.addItems({"En cours", "Livrée", "Annulée"});
+    statutCombo.setCurrentText(statutText);
+    form.addRow("Statut commande :", &statutCombo);
+
+    QLineEdit adresseEdit(adresseText);
+    form.addRow("Adresse livraison :", &adresseEdit);
+
+    QLineEdit clientIdEdit(clientIdText);
+    clientIdEdit.setValidator(new QIntValidator(1, 999999, this));
+    form.addRow("ID client :", &clientIdEdit);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form.addRow(&buttonBox);
+
+    connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        if (adresseEdit.text().trimmed().length() < 5) {
+            QMessageBox::warning(this, "Erreur", "L'adresse de livraison doit contenir au moins 5 caractères.");
+            return;
+        }
+        if (clientIdEdit.text().toInt() <= 0) {
+            QMessageBox::warning(this, "Erreur", "Veuillez entrer un ID client valide.");
+            return;
+        }
+
+        int id = ui->tableCommandes->item(row, 0)->text().toInt();
+        Commande c(id,
+                   dateEdit.date(),
+                   typeCombo.currentText(),
+                   statutCombo.currentText(),
+                   adresseEdit.text(),
+                   clientIdEdit.text().toInt());
+
+        if (CommandeService::updateCommande(c)) {
+            chargerCommandes();
+        }
+    }
 }
 
+// =========================
+// Supprimer commande
+// =========================
 void MainWindow::supprimerCommande() {
     int row = ui->tableCommandes->currentRow();
-    if (row < 0) return;
+    if (row < 0) {
+        QMessageBox::warning(this, "Erreur", "Veuillez sélectionner une commande.");
+        return;
+    }
 
     int id = ui->tableCommandes->item(row, 0)->text().toInt();
-    if (CommandeService::deleteCommande(id)) chargerCommandes();
+    if (CommandeService::deleteCommande(id)) {
+        chargerCommandes();
+    }
 }
 
-void MainWindow::remplirChampsCommande(int row, int) {
-    ui->dateCommande->setDate(QDate::fromString(ui->tableCommandes->item(row, 1)->text(), "yyyy-MM-dd"));
-    ui->comboTypeLivraison->setCurrentText(ui->tableCommandes->item(row, 2)->text());
-    ui->comboStatutCommande->setCurrentText(ui->tableCommandes->item(row, 3)->text());
-    ui->adresseLivraison->setText(ui->tableCommandes->item(row, 4)->text());
-    ui->idClientCommande->setText(ui->tableCommandes->item(row, 5)->text());
+bool MainWindow::validerChampsCommande() {
+    bool valide = true;
+
+    // Adresse livraison : min 5 caractères
+    if (ui->adresseLivraison->text().trimmed().length() < 5) {
+        ui->labelAdresseLivraisonError->setVisible(true);
+        valide = false;
+    } else {
+        ui->labelAdresseLivraisonError->setVisible(false);
+    }
+
+    // ID client : uniquement chiffres et non vide
+    QRegularExpression re("\\d+");
+    if (!re.match(ui->idClientCommande->text()).hasMatch()) {
+        ui->labelIdClientCommandeError->setVisible(true);
+        valide = false;
+    } else {
+        ui->labelIdClientCommandeError->setVisible(false);
+    }
+
+    return valide;
 }
+
+void MainWindow::remplirChampsCommande(int row, int)
+{
+    if (row < 0) return;
+
+    auto getTextSafe = [&](int col) -> QString {
+        auto item = ui->tableCommandes->item(row, col);
+        return item ? item->text() : "";
+    };
+
+    QString dateText     = getTextSafe(1); // Colonne Date Commande
+    QString typeText     = getTextSafe(2); // Colonne Type Livraison
+    QString statutText   = getTextSafe(3); // Colonne Statut Commande
+    QString adresseText  = getTextSafe(4); // Colonne Adresse Livraison
+    QString clientIdText = getTextSafe(5); // Colonne ID Client
+
+    // Remplir les champs du formulaire Commandes
+    if (!dateText.isEmpty())
+        ui->dateCommande->setDate(QDate::fromString(dateText, "yyyy-MM-dd"));
+    ui->comboTypeLivraison->setCurrentText(typeText);
+    ui->comboStatutCommande->setCurrentText(statutText);
+    ui->adresseLivraison->setText(adresseText);
+    ui->idClientCommande->setText(clientIdText);
+}
+
+

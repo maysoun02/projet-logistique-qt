@@ -33,6 +33,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     void setupValidators();
+    bool validerChampsCommande();
 };
 
 #endif // MAINWINDOW_H

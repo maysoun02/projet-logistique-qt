@@ -33,9 +33,14 @@
       <item>
        <widget class="QTableWidget" name="tableClients"/>
       </item>
+
+      <!-- Layout pour graphique Clients -->
+      <item>
+       <layout class="QVBoxLayout" name="layoutGraphClients"/>
+      </item>
+
       <item>
        <layout class="QFormLayout" name="formClients">
-
         <item row="0" column="0"><widget class="QLabel" name="labelNom"><property name="text"><string>Nom :</string></property></widget></item>
         <item row="0" column="1"><widget class="QLineEdit" name="lineNom"/></item>
         <item row="1" column="0"><widget class="QLabel" name="labelPrenom"><property name="text"><string>Prénom :</string></property></widget></item>
@@ -88,6 +93,12 @@
       <item>
        <widget class="QTableWidget" name="tableCommandes"/>
       </item>
+
+      <!-- Layout pour graphique Commandes -->
+      <item>
+       <layout class="QVBoxLayout" name="layoutGraphCommandes"/>
+      </item>
+
       <item>
        <layout class="QFormLayout" name="formCommandes">
         <item row="0" column="0"><widget class="QLabel" name="labelDateCommande"><property name="text"><string>Date commande :</string></property></widget></item>

@@ -1,10 +1,7 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"  // Important : pour avoir la définition complète de Ui::MainWindow
-
+#include "ui_mainwindow.h"
 #include "ClientService.h"
 #include "CommandeService.h"
-
-// Inclusions Qt nécessaires
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -19,6 +16,13 @@
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QIntValidator>
+#include <QtCharts/QChartView>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QLegend>
 
 // =========================
 // Constructeur
@@ -28,30 +32,42 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    // Pour afficher un calendrier dans dateCommande
     ui->dateCommande->setCalendarPopup(true);
 
-    // Masquer les messages d'erreurs au démarrage
     ui->labelAdresseLivraisonError->setVisible(false);
     ui->labelIdClientCommandeError->setVisible(false);
 
     setupValidators();
 
     // Connexions - Clients
-    connect(ui->btnAjouterClient, &QPushButton::clicked, this, &MainWindow::ajouterClient);
+    connect(ui->btnAjouterClient, &QPushButton::clicked, this, [this]{
+        ajouterClient();
+        afficherGraphClients();
+    });
     connect(ui->btnModifierClient, &QPushButton::clicked, this, &MainWindow::modifierClient);
-    connect(ui->btnSupprimerClient, &QPushButton::clicked, this, &MainWindow::supprimerClient);
+    connect(ui->btnSupprimerClient, &QPushButton::clicked, this, [this]{
+        supprimerClient();
+        afficherGraphClients();
+    });
     connect(ui->tableClients, &QTableWidget::cellClicked, this, &MainWindow::remplirChampsClient);
 
     // Connexions - Commandes
-    connect(ui->btnAjouterCommande, &QPushButton::clicked, this, &MainWindow::ajouterCommande);
+    connect(ui->btnAjouterCommande, &QPushButton::clicked, this, [this]{
+        ajouterCommande();
+        afficherGraphCommandes();
+    });
     connect(ui->btnModifierCommande, &QPushButton::clicked, this, &MainWindow::modifierCommande);
-    connect(ui->btnSupprimerCommande, &QPushButton::clicked, this, &MainWindow::supprimerCommande);
+    connect(ui->btnSupprimerCommande, &QPushButton::clicked, this, [this]{
+        supprimerCommande();
+        afficherGraphCommandes();
+    });
     connect(ui->tableCommandes, &QTableWidget::cellClicked, this, &MainWindow::remplirChampsCommande);
 
-    // Charger les données initiales
+    // Charger données initiales
     chargerClients();
     chargerCommandes();
+    afficherGraphClients();
+    afficherGraphCommandes();
 }
 
 MainWindow::~MainWindow() {
@@ -105,6 +121,7 @@ void MainWindow::chargerClients() {
         ui->tableClients->setItem(row, 4, new QTableWidgetItem(c.telephone));
         ui->tableClients->setItem(row, 5, new QTableWidgetItem(c.adresse));
     }
+
 }
 
 void MainWindow::ajouterClient() {
@@ -142,11 +159,11 @@ void MainWindow::modifierClient() {
         return item ? item->text() : "";
     };
 
-    QString nom     = getTextSafe(1); // Colonne Nom
-    QString prenom  = getTextSafe(2); // Colonne Prénom
-    QString email   = getTextSafe(3); // Colonne Email
-    QString tel     = getTextSafe(4); // Colonne Téléphone
-    QString adresse = getTextSafe(5); // Colonne Adresse
+    QString nom     = getTextSafe(1);
+    QString prenom  = getTextSafe(2);
+    QString email   = getTextSafe(3);
+    QString tel     = getTextSafe(4);
+    QString adresse = getTextSafe(5);
 
     if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() ||
         tel.isEmpty() || adresse.isEmpty()) {
@@ -154,7 +171,6 @@ void MainWindow::modifierClient() {
         return;
     }
 
-    // Création du popup
     QDialog dialog(this);
     dialog.setWindowTitle("Modifier Client");
     QFormLayout form(&dialog);
@@ -181,7 +197,6 @@ void MainWindow::modifierClient() {
     connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
     if (dialog.exec() == QDialog::Accepted) {
-        // Vérification de base
         if (nomEdit.text().trimmed().isEmpty() || prenomEdit.text().trimmed().isEmpty() ||
             emailEdit.text().trimmed().isEmpty() || telEdit.text().trimmed().isEmpty() ||
             adresseEdit.text().trimmed().isEmpty()) {
@@ -202,7 +217,6 @@ void MainWindow::modifierClient() {
         }
     }
 }
-
 
 void MainWindow::supprimerClient() {
     int row = ui->tableClients->currentRow();
@@ -245,9 +259,9 @@ void MainWindow::chargerCommandes() {
         ui->tableCommandes->setItem(row, 5, new QTableWidgetItem(QString::number(c.clientId)));
     }
 
-    // Masquer la colonne ID
     ui->tableCommandes->setColumnHidden(0, true);
     ui->tableCommandes->resizeColumnsToContents();
+
 }
 
 // =========================
@@ -302,14 +316,13 @@ void MainWindow::modifierCommande() {
         return;
     }
 
-    // Création du popup
     QDialog dialog(this);
     dialog.setWindowTitle("Modifier Commande");
     QFormLayout form(&dialog);
 
     QDateEdit dateEdit;
     dateEdit.setDate(QDate::fromString(dateText, "yyyy-MM-dd"));
-    dateEdit.setCalendarPopup(true); // calendrier activé
+    dateEdit.setCalendarPopup(true);
     form.addRow("Date commande :", &dateEdit);
 
     QComboBox typeCombo;
@@ -378,7 +391,6 @@ void MainWindow::supprimerCommande() {
 bool MainWindow::validerChampsCommande() {
     bool valide = true;
 
-    // Adresse livraison : min 5 caractères
     if (ui->adresseLivraison->text().trimmed().length() < 5) {
         ui->labelAdresseLivraisonError->setVisible(true);
         valide = false;
@@ -386,7 +398,6 @@ bool MainWindow::validerChampsCommande() {
         ui->labelAdresseLivraisonError->setVisible(false);
     }
 
-    // ID client : uniquement chiffres et non vide
     QRegularExpression re("\\d+");
     if (!re.match(ui->idClientCommande->text()).hasMatch()) {
         ui->labelIdClientCommandeError->setVisible(true);
@@ -398,8 +409,7 @@ bool MainWindow::validerChampsCommande() {
     return valide;
 }
 
-void MainWindow::remplirChampsCommande(int row, int)
-{
+void MainWindow::remplirChampsCommande(int row, int) {
     if (row < 0) return;
 
     auto getTextSafe = [&](int col) -> QString {
@@ -407,19 +417,158 @@ void MainWindow::remplirChampsCommande(int row, int)
         return item ? item->text() : "";
     };
 
-    QString dateText     = getTextSafe(1); // Colonne Date Commande
-    QString typeText     = getTextSafe(2); // Colonne Type Livraison
-    QString statutText   = getTextSafe(3); // Colonne Statut Commande
-    QString adresseText  = getTextSafe(4); // Colonne Adresse Livraison
-    QString clientIdText = getTextSafe(5); // Colonne ID Client
+    QString dateText     = getTextSafe(1);
+    QString typeText     = getTextSafe(2);
+    QString statutText   = getTextSafe(3);
+    QString adresseText  = getTextSafe(4);
+    QString clientIdText = getTextSafe(5);
 
-    // Remplir les champs du formulaire Commandes
     if (!dateText.isEmpty())
         ui->dateCommande->setDate(QDate::fromString(dateText, "yyyy-MM-dd"));
     ui->comboTypeLivraison->setCurrentText(typeText);
     ui->comboStatutCommande->setCurrentText(statutText);
     ui->adresseLivraison->setText(adresseText);
     ui->idClientCommande->setText(clientIdText);
+}
+
+// =========================
+// Statistiques (Graphiques)
+// =========================
+void MainWindow::afficherGraphClients()
+{
+    int nbClients = ui->tableClients->rowCount();
+
+    QPieSeries *series = new QPieSeries();
+    series->append("Clients", nbClients);
+
+    QChart *chart = new QChart();
+    chart->addSeries(series);
+    chart->setTitle("Statistiques Clients");
+
+    QChartView *chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+
+    QLayoutItem *child;
+    while ((child = ui->layoutGraphClients->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+    ui->layoutGraphClients->addWidget(chartView);
+}
+
+void MainWindow::afficherGraphCommandes()
+{
+    int enCours = 0, livree = 0, annulee = 0;
+
+    for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
+        QString statut = ui->tableCommandes->item(i, 3)->text();
+        if (statut == "En cours") enCours++;
+        else if (statut == "Livrée") livree++;
+        else if (statut == "Annulée") annulee++;
+    }
+
+    QPieSeries *series = new QPieSeries();
+    series->append("En cours", enCours);
+    series->append("Livrée", livree);
+    series->append("Annulée", annulee);
+
+    QChart *chart = new QChart();
+    chart->addSeries(series);
+    chart->setTitle("Répartition des Commandes");
+
+    QChartView *chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+
+    QLayoutItem *child;
+    while ((child = ui->layoutGraphCommandes->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+    ui->layoutGraphCommandes->addWidget(chartView);
+}
+
+// =========================
+// Recherche & Tri multicritères - Clients
+// =========================
+void MainWindow::rechercherClientsParNom(const QString &critere)
+{
+    for (int i = 0; i < ui->tableClients->rowCount(); ++i) {
+        QString valeur = ui->tableClients->item(i, 1)->text();
+        ui->tableClients->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+    }
+}
+
+void MainWindow::rechercherClientsParPrenom(const QString &critere)
+{
+    for (int i = 0; i < ui->tableClients->rowCount(); ++i) {
+        QString valeur = ui->tableClients->item(i, 2)->text();
+        ui->tableClients->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+    }
+}
+
+void MainWindow::rechercherClientsParEmail(const QString &critere)
+{
+    for (int i = 0; i < ui->tableClients->rowCount(); ++i) {
+        QString valeur = ui->tableClients->item(i, 3)->text();
+        ui->tableClients->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+    }
+}
+
+void MainWindow::trierClientsParNom()
+{
+    ui->tableClients->sortItems(1, Qt::AscendingOrder);
+}
+
+void MainWindow::trierClientsParPrenom()
+{
+    ui->tableClients->sortItems(2, Qt::AscendingOrder);
+}
+
+void MainWindow::trierClientsParEmail()
+{
+    ui->tableClients->sortItems(3, Qt::AscendingOrder);
+}
+
+// =========================
+// Recherche & Tri multicritères - Commandes
+// =========================
+void MainWindow::rechercherCommandesParDate(const QString &critere)
+{
+    for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
+        QString valeur = ui->tableCommandes->item(i, 1)->text();
+        ui->tableCommandes->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+    }
+}
+
+void MainWindow::rechercherCommandesParType(const QString &critere)
+{
+    for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
+        QString valeur = ui->tableCommandes->item(i, 2)->text();
+        ui->tableCommandes->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+    }
+}
+
+void MainWindow::rechercherCommandesParStatut(const QString &critere)
+{
+    for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
+        QString valeur = ui->tableCommandes->item(i, 3)->text();
+        ui->tableCommandes->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+    }
+}
+
+void MainWindow::trierCommandesParDate()
+{
+    ui->tableCommandes->sortItems(1, Qt::AscendingOrder);
+}
+
+void MainWindow::trierCommandesParType()
+{
+    ui->tableCommandes->sortItems(2, Qt::AscendingOrder);
+}
+
+void MainWindow::trierCommandesParStatut()
+{
+    ui->tableCommandes->sortItems(3, Qt::AscendingOrder);
 }
 
 

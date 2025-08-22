@@ -9,6 +9,7 @@
 // Qt Charts
 #include <QtCharts/QChartView>
 #include <QtCharts/QPieSeries>
+#include <QtCharts/QPieSlice>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
 #include <QtCharts/QBarCategoryAxis>
@@ -27,44 +28,52 @@ public:
     ~MainWindow();
 
 private slots:
-    // Clients
+    // --- Clients ---
     void chargerClients();
     void ajouterClient();
     void modifierClient();
     void supprimerClient();
-
     void remplirChampsClient(int row, int column);
+
+    // Recherche & Tri Clients
     void rechercherClientsParNom(const QString &critere);
     void rechercherClientsParPrenom(const QString &critere);
     void rechercherClientsParEmail(const QString &critere);
-
     void trierClientsParNom();
     void trierClientsParPrenom();
     void trierClientsParEmail();
 
-    // Commandes
+
+    // --- Commandes ---
     void chargerCommandes();
     void ajouterCommande();
     void modifierCommande();
     void supprimerCommande();
     void remplirChampsCommande(int row, int column);
 
+    // Recherche & Tri Commandes
     void rechercherCommandesParDate(const QString &critere);
     void rechercherCommandesParType(const QString &critere);
     void rechercherCommandesParStatut(const QString &critere);
-
     void trierCommandesParDate();
     void trierCommandesParType();
     void trierCommandesParStatut();
 
-private:
-    Ui::MainWindow *ui;
-    void setupValidators();
-    bool validerChampsCommande();
 
-    // --- Graphiques ---
+
+    // --- Statistiques ---
     void afficherGraphClients();
     void afficherGraphCommandes();
+
+private:
+    Ui::MainWindow *ui;
+
+    // --- Validation ---
+    void setupValidators();
+    bool validerChampsCommande();
+    void appliquerFiltresClients();
+    void appliquerFiltresCommandes();
+
 };
 
 #endif // MAINWINDOW_H

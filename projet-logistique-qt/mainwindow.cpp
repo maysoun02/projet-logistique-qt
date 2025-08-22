@@ -51,6 +51,16 @@ MainWindow::MainWindow(QWidget *parent)
     });
     connect(ui->tableClients, &QTableWidget::cellClicked, this, &MainWindow::remplirChampsClient);
 
+    // >>> Recherche & Tri – Clients
+    if (ui->btnSearchClients) {
+        connect(ui->btnSearchClients, &QPushButton::clicked, this, [this]() {
+            rechercherClientsParNom(ui->searchNom->text().trimmed());
+            rechercherClientsParPrenom(ui->searchPrenom->text().trimmed());
+            rechercherClientsParEmail(ui->searchEmail->text().trimmed());
+        });
+    }
+
+
     // Connexions - Commandes
     connect(ui->btnAjouterCommande, &QPushButton::clicked, this, [this]{
         ajouterCommande();
@@ -63,6 +73,12 @@ MainWindow::MainWindow(QWidget *parent)
     });
     connect(ui->tableCommandes, &QTableWidget::cellClicked, this, &MainWindow::remplirChampsCommande);
 
+    // >>> Recherche & Tri – Commandes (AJOUT)
+    connect(ui->btnSearchCommandes, &QPushButton::clicked, this, [this]() {
+        rechercherCommandesParDate(ui->searchDateCommande->date().toString("dd/MM/yyyy"));
+        rechercherCommandesParType(ui->searchTypeLivraison->currentText());
+        rechercherCommandesParStatut(ui->searchStatutCommande->currentText());
+    });
     // Charger données initiales
     chargerClients();
     chargerCommandes();
@@ -121,7 +137,6 @@ void MainWindow::chargerClients() {
         ui->tableClients->setItem(row, 4, new QTableWidgetItem(c.telephone));
         ui->tableClients->setItem(row, 5, new QTableWidgetItem(c.adresse));
     }
-
 }
 
 void MainWindow::ajouterClient() {
@@ -139,11 +154,16 @@ void MainWindow::ajouterClient() {
     Client c(0, nom, prenom, email, tel, adresse);
     if (ClientService::addClient(c)) {
         chargerClients();
+        // vider les champs
         ui->lineNom->clear();
         ui->linePrenom->clear();
         ui->lineEmail->clear();
         ui->lineTel->clear();
         ui->lineAdresse->clear();
+        // masquer les labels d’erreur après succès
+        ui->labelEmailError->setVisible(false);
+        ui->labelTelError->setVisible(false);
+        ui->labelAdresseError->setVisible(false);
     }
 }
 
@@ -214,6 +234,7 @@ void MainWindow::modifierClient() {
 
         if (ClientService::updateClient(c)) {
             chargerClients();
+            afficherGraphClients(); // AJOUT : refresh stats après modification
         }
     }
 }
@@ -235,6 +256,9 @@ void MainWindow::remplirChampsClient(int row, int) {
     ui->lineTel->setText(ui->tableClients->item(row, 4)->text());
     ui->lineAdresse->setText(ui->tableClients->item(row, 5)->text());
 }
+
+
+
 
 // =========================
 // Gestion Commandes
@@ -261,7 +285,6 @@ void MainWindow::chargerCommandes() {
 
     ui->tableCommandes->setColumnHidden(0, true);
     ui->tableCommandes->resizeColumnsToContents();
-
 }
 
 // =========================
@@ -368,6 +391,7 @@ void MainWindow::modifierCommande() {
 
         if (CommandeService::updateCommande(c)) {
             chargerCommandes();
+            afficherGraphCommandes(); // AJOUT : refresh stats après modification
         }
     }
 }
@@ -431,6 +455,8 @@ void MainWindow::remplirChampsCommande(int row, int) {
     ui->idClientCommande->setText(clientIdText);
 }
 
+
+
 // =========================
 // Statistiques (Graphiques)
 // =========================
@@ -490,85 +516,60 @@ void MainWindow::afficherGraphCommandes()
 // =========================
 // Recherche & Tri multicritères - Clients
 // =========================
-void MainWindow::rechercherClientsParNom(const QString &critere)
+// Helper interne : applique TOUTES les conditions en même temps
+void MainWindow::appliquerFiltresClients()
 {
+    const QString nom    = ui->searchNom->text().trimmed();
+    const QString prenom = ui->searchPrenom->text().trimmed();
+    const QString email  = ui->searchEmail->text().trimmed();
+
     for (int i = 0; i < ui->tableClients->rowCount(); ++i) {
-        QString valeur = ui->tableClients->item(i, 1)->text();
-        ui->tableClients->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+        const QString vNom    = ui->tableClients->item(i, 1)->text();
+        const QString vPrenom = ui->tableClients->item(i, 2)->text();
+        const QString vEmail  = ui->tableClients->item(i, 3)->text();
+
+        const bool okNom    = nom.isEmpty()    || vNom.contains(nom, Qt::CaseInsensitive);
+        const bool okPrenom = prenom.isEmpty() || vPrenom.contains(prenom, Qt::CaseInsensitive);
+        const bool okEmail  = email.isEmpty()  || vEmail.contains(email, Qt::CaseInsensitive);
+
+        ui->tableClients->setRowHidden(i, !(okNom && okPrenom && okEmail));
     }
 }
+void MainWindow::rechercherClientsParNom(const QString &)    { appliquerFiltresClients(); }
+void MainWindow::rechercherClientsParPrenom(const QString &) { appliquerFiltresClients(); }
+void MainWindow::rechercherClientsParEmail(const QString &)  { appliquerFiltresClients(); }
 
-void MainWindow::rechercherClientsParPrenom(const QString &critere)
-{
-    for (int i = 0; i < ui->tableClients->rowCount(); ++i) {
-        QString valeur = ui->tableClients->item(i, 2)->text();
-        ui->tableClients->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
-    }
-}
-
-void MainWindow::rechercherClientsParEmail(const QString &critere)
-{
-    for (int i = 0; i < ui->tableClients->rowCount(); ++i) {
-        QString valeur = ui->tableClients->item(i, 3)->text();
-        ui->tableClients->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
-    }
-}
-
-void MainWindow::trierClientsParNom()
-{
-    ui->tableClients->sortItems(1, Qt::AscendingOrder);
-}
-
-void MainWindow::trierClientsParPrenom()
-{
-    ui->tableClients->sortItems(2, Qt::AscendingOrder);
-}
-
-void MainWindow::trierClientsParEmail()
-{
-    ui->tableClients->sortItems(3, Qt::AscendingOrder);
-}
+void MainWindow::trierClientsParNom()    { ui->tableClients->sortItems(1, Qt::AscendingOrder); }
+void MainWindow::trierClientsParPrenom() { ui->tableClients->sortItems(2, Qt::AscendingOrder); }
+void MainWindow::trierClientsParEmail()  { ui->tableClients->sortItems(3, Qt::AscendingOrder); }
 
 // =========================
 // Recherche & Tri multicritères - Commandes
 // =========================
-void MainWindow::rechercherCommandesParDate(const QString &critere)
+// Helper interne : applique TOUTES les conditions en même temps
+void MainWindow::appliquerFiltresCommandes()
 {
+    const QString date   = ui->searchDateCommande->date().toString("yyyy-MM-dd");
+    const QString type   = ui->searchTypeLivraison->currentText().trimmed();
+    const QString statut = ui->searchStatutCommande->currentText().trimmed();
+
     for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
-        QString valeur = ui->tableCommandes->item(i, 1)->text();
-        ui->tableCommandes->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
+        const QString vDate   = ui->tableCommandes->item(i, 1)->text();
+        const QString vType   = ui->tableCommandes->item(i, 2)->text();
+        const QString vStatut = ui->tableCommandes->item(i, 3)->text();
+
+        const bool okDate   = date.isEmpty() || vDate.contains(date, Qt::CaseInsensitive);
+        const bool okType   = (type.isEmpty() || type == "Tous types")   || vType.compare(type, Qt::CaseInsensitive)   == 0;
+        const bool okStatut = (statut.isEmpty() || statut == "Tous statuts") || vStatut.compare(statut, Qt::CaseInsensitive) == 0;
+
+        ui->tableCommandes->setRowHidden(i, !(okDate && okType && okStatut));
     }
 }
 
-void MainWindow::rechercherCommandesParType(const QString &critere)
-{
-    for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
-        QString valeur = ui->tableCommandes->item(i, 2)->text();
-        ui->tableCommandes->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
-    }
-}
+void MainWindow::rechercherCommandesParDate(const QString &)   { appliquerFiltresCommandes(); }
+void MainWindow::rechercherCommandesParType(const QString &)   { appliquerFiltresCommandes(); }
+void MainWindow::rechercherCommandesParStatut(const QString &) { appliquerFiltresCommandes(); }
 
-void MainWindow::rechercherCommandesParStatut(const QString &critere)
-{
-    for (int i = 0; i < ui->tableCommandes->rowCount(); ++i) {
-        QString valeur = ui->tableCommandes->item(i, 3)->text();
-        ui->tableCommandes->setRowHidden(i, !valeur.contains(critere, Qt::CaseInsensitive));
-    }
-}
-
-void MainWindow::trierCommandesParDate()
-{
-    ui->tableCommandes->sortItems(1, Qt::AscendingOrder);
-}
-
-void MainWindow::trierCommandesParType()
-{
-    ui->tableCommandes->sortItems(2, Qt::AscendingOrder);
-}
-
-void MainWindow::trierCommandesParStatut()
-{
-    ui->tableCommandes->sortItems(3, Qt::AscendingOrder);
-}
-
-
+void MainWindow::trierCommandesParDate()   { ui->tableCommandes->sortItems(1, Qt::AscendingOrder); }
+void MainWindow::trierCommandesParType()   { ui->tableCommandes->sortItems(2, Qt::AscendingOrder); }
+void MainWindow::trierCommandesParStatut() { ui->tableCommandes->sortItems(3, Qt::AscendingOrder); }
